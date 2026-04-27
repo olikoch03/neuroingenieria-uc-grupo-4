@@ -251,4 +251,3 @@ Citation metadata is provided in `CITATION.cff`.
 ## Authors
 
 Neuroengineering Research Group
-test
