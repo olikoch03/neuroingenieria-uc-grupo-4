@@ -252,4 +252,3 @@ Citation metadata is provided in `CITATION.cff`.
 
 Neuroengineering Research Group
 
-hola soy mica
