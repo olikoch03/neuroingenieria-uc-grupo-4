@@ -101,18 +101,24 @@ def cargar_metadatos(ruta_carpeta: str, data_base: list[RegistroCSV]) -> None:
     # Cada linea de metadato se separa en:
     # - campo
     # - valor
-    #
-    # Tarea del estudiante:
-    # 1. recorrer data_base,
-    # 2. armar archivo_csv con os.path.join,
-    # 3. abrir cada fichero,
-    # 4. detenerse en la primera linea vacia,
-    # 5. separar cada linea en campo y valor,
-    # 6. guardar el resultado en registro.metadatos.
-    #
-    # Esta version deja una tabla vacia para que el script siga funcionando.
     for registro in data_base:
-        registro.metadatos = pd.DataFrame(columns=["campo", "valor"])
+        archivo_csv = os.path.join(ruta_carpeta, registro.nombre_fichero)
+        filas_metadatos = []
+
+        with open(archivo_csv, "r", encoding="utf-8") as f:
+            for linea in f:
+                linea = linea.strip()
+
+                if linea == "":
+                    break
+
+                partes = linea.split(",", 1)
+                if len(partes) == 2:
+                    campo = partes[0].strip()
+                    valor = partes[1].strip()
+                    filas_metadatos.append({"campo": campo, "valor": valor})
+
+        registro.metadatos = pd.DataFrame(filas_metadatos, columns=["campo", "valor"])
 
 
 # ---------------------------------------------------------------------------
@@ -142,18 +148,26 @@ def cargar_senales(ruta_carpeta: str, data_base: list[RegistroCSV]) -> None:
 
 # ---------------------------------------------------------------------------
 def sombrear_intervalos_sync(ax, tiempo, sync) -> None:
-    # Sombrea en gris claro los intervalos donde Sync toma valor 1.
-    # La idea es:
-    # - cuando Sync pasa de 0 a 1, se abre un intervalo sombreado;
-    # - cuando Sync vuelve a 0, se cierra ese intervalo.
-    #
-    # Tarea del estudiante:
-    # 1. recorrer la senal sync,
-    # 2. detectar los cambios de 0 a 1 y de 1 a 0,
-    # 3. usar ax.axvspan(inicio, fin, ...) para sombrear.
-    #
-    # Esta version no hace nada para no interrumpir la ejecucion.
-    return
+    sync = np.asarray(sync)
+    tiempo = np.asarray(tiempo)
+
+    en_intervalo = False
+    inicio = None
+
+    for i in range(len(sync)):
+        valor_actual = sync[i]
+
+        if not en_intervalo and valor_actual == 1:
+            inicio = tiempo[i]
+            en_intervalo = True
+
+        elif en_intervalo and valor_actual != 1:
+            fin = tiempo[i]
+            ax.axvspan(inicio, fin, color="lightgray", alpha=0.4)
+            en_intervalo = False
+
+    if en_intervalo:
+        ax.axvspan(inicio, tiempo[-1], color="lightgray", alpha=0.4)
 
 
 # ---------------------------------------------------------------------------
@@ -164,30 +178,30 @@ def graficar_registro(
     acc_z,
     sync,
 ) -> None:
-    # Grafica Angle_X y Acc_Z usando tiempo en el eje X.
-    # Parametros:
-    # - nombre_fichero: se usa como titulo general de la figura.
-    # - frecuencia_muestreo: valor en Hz para construir el vector tiempo.
-    # - angle_x: senal de angulo en X.
-    # - acc_z: senal de aceleracion lineal en Z.
-    # - sync: senal binaria usada para sombrear el fondo.
-    #
-    # Tarea del estudiante:
-    # 1. convertir las entradas a arreglos o series numericas,
-    # 2. construir el vector tiempo como muestra / frecuencia,
-    # 3. crear la figura con dos subplots,
-    # 4. llamar a sombrear_intervalos_sync en ambos ejes,
-    # 5. graficar Angle_X y Linear_Acceleration_Z,
-    # 6. poner como titulo general el nombre del fichero.
-    #
-    # Esta version solo genera una figura vacia muy simple para que se vea
-    # la estructura del resultado sin exigir la implementacion completa.
+    angle_x = pd.to_numeric(angle_x, errors="coerce").to_numpy()
+    acc_z = pd.to_numeric(acc_z, errors="coerce").to_numpy()
+    sync = pd.to_numeric(sync, errors="coerce").fillna(0).to_numpy()
+    if frecuencia_muestreo is None or frecuencia_muestreo <= 0:
+        raise ValueError("La frecuencia de muestreo no es válida.")
+    n_muestras = len(angle_x)
+    tiempo = np.arange(n_muestras) / frecuencia_muestreo
+
     figura, ejes = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
-    ejes[0].set_title("Angle X")
-    ejes[0].set_ylabel("Angulo [deg]")
-    ejes[1].set_title("Acceleration Z")
-    ejes[1].set_ylabel("Aceleracion [m/s2]")
+
+    sombrear_intervalos_sync(ejes[0], tiempo, sync)
+    sombrear_intervalos_sync(ejes[1], tiempo, sync)
+
+    ejes[0].plot(tiempo, angle_x, color="tab:blue")
+    ejes[0].set_title("Angle_X")
+    ejes[0].set_ylabel("Ángulo [deg]")
+    ejes[0].grid(True, alpha=0.3)
+
+    ejes[1].plot(tiempo, acc_z, color="tab:orange")
+    ejes[1].set_title("Linear_Acceleration_Z")
+    ejes[1].set_ylabel("Aceleración [m/s²]")
     ejes[1].set_xlabel("Tiempo [s]")
+    ejes[1].grid(True, alpha=0.3)
+
     figura.suptitle(nombre_fichero)
     figura.tight_layout(rect=(0, 0, 1, 0.97))
     plt.show()
@@ -195,17 +209,16 @@ def graficar_registro(
 
 # ---------------------------------------------------------------------------
 def obtener_frecuencia_muestreo(registro: RegistroCSV) -> float | None:
-    # Extrae la frecuencia de muestreo desde la tabla de metadatos.
-    #
-    # Tarea del estudiante:
-    # 1. buscar en registro.metadatos la fila donde campo sea
-    #    "Sampling Frequency",
-    # 2. tomar el valor asociado,
-    # 3. convertirlo a float,
-    # 4. devolver ese numero.
-    #
-    # Mientras no este implementada, devuelve None.
-    return None
+    coincidencias = registro.metadatos[
+        registro.metadatos["campo"].str.strip() == "Sampling Frequency"
+    ]
+    if coincidencias.empty:
+        return None
+    valor = coincidencias.iloc[0]["valor"]
+    try:
+        return float(valor)
+    except (TypeError, ValueError):
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -238,21 +251,16 @@ def main() -> None:
         print(registro.metadatos.head())
         print(registro.datos.head())
 
-    # Elegimos un indice de ejemplo para graficar.
-    #
-    # Una vez implementadas las funciones anteriores, descomentar lo
-    # siguiente para generar las curvas de un registro:
-    #
-    # indice = 5
-    # registro = data_base[indice]
-    # frecuencia_muestreo = obtener_frecuencia_muestreo(registro)
-    # graficar_registro(
-    #     registro.nombre_fichero,
-    #     frecuencia_muestreo,
-    #     registro.datos["Angle_X"],
-    #     registro.datos["Linear_Acceleration_Z"],
-    #     registro.datos["Sync"],
-    # )
+    indice = 3
+    registro = data_base[indice]
+    frecuencia_muestreo = obtener_frecuencia_muestreo(registro)
+    graficar_registro(
+    registro.nombre_fichero,
+    frecuencia_muestreo,
+    registro.datos["Angle_X"],
+    registro.datos["Linear_Acceleration_Z"],
+    registro.datos["Sync"],
+    )
 
 
 # ---------------------------------------------------------------------------
