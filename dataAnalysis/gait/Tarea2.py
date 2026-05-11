@@ -1,4 +1,7 @@
-"""Plantilla base para la tarea 2 de procesamiento de datos de marcha.
+"""
+Autora: Bianca Micaela Duarte (bimica25)
+
+Plantilla base para la tarea 2 de procesamiento de datos de marcha.
 
 La idea de esta plantilla es que el estudiante complete las funciones
 necesarias para:
@@ -190,28 +193,29 @@ def construir_registro_desde_csv(ruta_csv: str) -> RegistroCSV:
 
 # ---------------------------------------------------------------------------
 def obtener_frecuencia_muestreo(registro: RegistroCSV) -> float:
-    # Extrae la frecuencia de muestreo desde la tabla de metadatos.
-    #
-    # Tarea del estudiante:
-    # 1. buscar la fila donde campo sea "Sampling Frequency",
-    # 2. recuperar el valor asociado,
-    # 3. convertirlo a float,
-    # 4. devolver ese numero.
-    #
+    # Extrae la frecuencia de muestreo desde la tabla de metadatos.    #
     # Mientras no se implemente, devuelve 0.0.
-    return 0.0
+    coincidencias = registro.metadatos[
+        registro.metadatos["campo"].str.strip() == "Sampling Frequency"
+    ]
+
+    if coincidencias.empty:
+        return 0.0
+
+    valor = coincidencias.iloc[0]["valor"]
+
+    try:
+        return float(valor)
+    except (TypeError, ValueError):
+        return 0.0
 
 
 # ---------------------------------------------------------------------------
 def corregir_aceleracion(registro: RegistroCSV) -> None:
     # Cambia el signo de Linear_Acceleration_Z en todas las muestras.
-    #
-    # Tarea del estudiante:
-    # 1. acceder a la columna Linear_Acceleration_Z,
-    # 2. multiplicarla por -1,
-    # 3. guardar el resultado en la misma tabla.
-    #
-    return
+    registro.datos["Linear_Acceleration_Z"] = (
+        registro.datos["Linear_Acceleration_Z"] * -1
+    )
 
 
 # ---------------------------------------------------------------------------
