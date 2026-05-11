@@ -209,16 +209,12 @@ def graficar_registro(
 
 # ---------------------------------------------------------------------------
 def obtener_frecuencia_muestreo(registro: RegistroCSV) -> float | None:
-    def obtener_frecuencia_muestreo(registro: RegistroCSV) -> float | None:
     coincidencias = registro.metadatos[
         registro.metadatos["campo"].str.strip() == "Sampling Frequency"
     ]
-
     if coincidencias.empty:
         return None
-
     valor = coincidencias.iloc[0]["valor"]
-
     try:
         return float(valor)
     except (TypeError, ValueError):
