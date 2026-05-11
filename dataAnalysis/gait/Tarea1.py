@@ -190,17 +190,20 @@ def graficar_registro(
 
 # ---------------------------------------------------------------------------
 def obtener_frecuencia_muestreo(registro: RegistroCSV) -> float | None:
-    # Extrae la frecuencia de muestreo desde la tabla de metadatos.
-    #
-    # Tarea del estudiante:
-    # 1. buscar en registro.metadatos la fila donde campo sea
-    #    "Sampling Frequency",
-    # 2. tomar el valor asociado,
-    # 3. convertirlo a float,
-    # 4. devolver ese numero.
-    #
-    # Mientras no este implementada, devuelve None.
-    return None
+    def obtener_frecuencia_muestreo(registro: RegistroCSV) -> float | None:
+    coincidencias = registro.metadatos[
+        registro.metadatos["campo"].str.strip() == "Sampling Frequency"
+    ]
+
+    if coincidencias.empty:
+        return None
+
+    valor = coincidencias.iloc[0]["valor"]
+
+    try:
+        return float(valor)
+    except (TypeError, ValueError):
+        return None
 
 
 # ---------------------------------------------------------------------------
