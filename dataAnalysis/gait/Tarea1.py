@@ -101,18 +101,24 @@ def cargar_metadatos(ruta_carpeta: str, data_base: list[RegistroCSV]) -> None:
     # Cada linea de metadato se separa en:
     # - campo
     # - valor
-    #
-    # Tarea del estudiante:
-    # 1. recorrer data_base,
-    # 2. armar archivo_csv con os.path.join,
-    # 3. abrir cada fichero,
-    # 4. detenerse en la primera linea vacia,
-    # 5. separar cada linea en campo y valor,
-    # 6. guardar el resultado en registro.metadatos.
-    #
-    # Esta version deja una tabla vacia para que el script siga funcionando.
     for registro in data_base:
-        registro.metadatos = pd.DataFrame(columns=["campo", "valor"])
+        archivo_csv = os.path.join(ruta_carpeta, registro.nombre_fichero)
+        filas_metadatos = []
+
+        with open(archivo_csv, "r", encoding="utf-8") as f:
+            for linea in f:
+                linea = linea.strip()
+
+                if linea == "":
+                    break
+
+                partes = linea.split(",", 1)
+                if len(partes) == 2:
+                    campo = partes[0].strip()
+                    valor = partes[1].strip()
+                    filas_metadatos.append({"campo": campo, "valor": valor})
+
+        registro.metadatos = pd.DataFrame(filas_metadatos, columns=["campo", "valor"])
 
 
 # ---------------------------------------------------------------------------
