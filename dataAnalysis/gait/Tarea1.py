@@ -101,39 +101,50 @@ def cargar_metadatos(ruta_carpeta: str, data_base: list[RegistroCSV]) -> None:
     # Cada linea de metadato se separa en:
     # - campo
     # - valor
-    #
-    # Tarea del estudiante:
-    # 1. recorrer data_base,
-    # 2. armar archivo_csv con os.path.join,
-    # 3. abrir cada fichero,
-    # 4. detenerse en la primera linea vacia,
-    # 5. separar cada linea en campo y valor,
-    # 6. guardar el resultado en registro.metadatos.
-    #
-    # Esta version deja una tabla vacia para que el script siga funcionando.
     for registro in data_base:
-        registro.metadatos = pd.DataFrame(columns=["campo", "valor"])
+        archivo_csv = os.path.join(ruta_carpeta, registro.nombre_fichero)
+        filas_metadatos = []
+
+        with open(archivo_csv, "r", encoding="utf-8") as f:
+            for linea in f:
+                linea = linea.strip()
+
+                if linea == "":
+                    break
+
+                partes = linea.split(",", 1)
+                if len(partes) == 2:
+                    campo = partes[0].strip()
+                    valor = partes[1].strip()
+                    filas_metadatos.append({"campo": campo, "valor": valor})
+
+        registro.metadatos = pd.DataFrame(filas_metadatos, columns=["campo", "valor"])
 
 
 # ---------------------------------------------------------------------------
 def cargar_senales(ruta_carpeta: str, data_base: list[RegistroCSV]) -> None:
-    # Carga solo las senales de interes del bloque numerico de cada CSV.
-    #
-    # Tarea del estudiante:
-    # 1. recorrer data_base,
-    # 2. abrir el fichero y contar cuantas lineas hay antes del bloque
-    #    numerico,
-    # 3. leer la tabla numerica con pandas.read_csv(..., skiprows=...),
-    # 4. limpiar los nombres de columnas si hace falta,
-    # 5. quedarse solo con COLUMNAS_INTERES,
-    # 6. convertir las columnas a numericas,
-    # 7. guardar el resultado en registro.datos.
-    #
-    # Esta version deja una tabla vacia con las columnas esperadas para que
-    # el script siga funcionando.
+    # Carga solo las señales de interés del bloque numérico de cada CSV.
     for registro in data_base:
-        registro.datos = pd.DataFrame(columns=COLUMNAS_INTERES)
+        archivo_csv = os.path.join(ruta_carpeta, registro.nombre_fichero)
 
+        lineas_antes_bloque = 0
+        with open(archivo_csv, "r", encoding="utf-8") as f:
+            for linea in f:
+                lineas_antes_bloque += 1
+                if linea.strip() == "":
+                    break
+
+        df = pd.read_csv(archivo_csv, skiprows=lineas_antes_bloque)
+
+        df.columns = [col.strip() for col in df.columns]
+
+        columnas_disponibles = [col for col in COLUMNAS_INTERES if col in df.columns]
+        df = df[columnas_disponibles].copy()
+
+        for col in columnas_disponibles:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+        registro.datos = df
 
 # ---------------------------------------------------------------------------
 def sombrear_intervalos_sync(ax, tiempo, sync) -> None:
@@ -198,17 +209,16 @@ def graficar_registro(
 
 # ---------------------------------------------------------------------------
 def obtener_frecuencia_muestreo(registro: RegistroCSV) -> float | None:
-    # Extrae la frecuencia de muestreo desde la tabla de metadatos.
-    #
-    # Tarea del estudiante:
-    # 1. buscar en registro.metadatos la fila donde campo sea
-    #    "Sampling Frequency",
-    # 2. tomar el valor asociado,
-    # 3. convertirlo a float,
-    # 4. devolver ese numero.
-    #
-    # Mientras no este implementada, devuelve None.
-    return None
+    coincidencias = registro.metadatos[
+        registro.metadatos["campo"].str.strip() == "Sampling Frequency"
+    ]
+    if coincidencias.empty:
+        return None
+    valor = coincidencias.iloc[0]["valor"]
+    try:
+        return float(valor)
+    except (TypeError, ValueError):
+        return None
 
 
 # ---------------------------------------------------------------------------
