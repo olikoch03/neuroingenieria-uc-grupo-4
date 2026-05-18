@@ -251,15 +251,25 @@ def main() -> None:
         print(registro.metadatos.head())
         print(registro.datos.head())
 
-    indice = 3
+    # Selección interactiva del registro a graficar (reemplaza índice fijo).
+    while True:
+        try:
+            indice = int(input(f"Seleccione un archivo para graficar (0 - {len(data_base)-1}): "))
+            if 0 <= indice < len(data_base):
+                break
+            else:
+                print("Ingrese un número válido.")
+        except ValueError:
+            print("Debe ingresar un entero.")
+
     registro = data_base[indice]
     frecuencia_muestreo = obtener_frecuencia_muestreo(registro)
     graficar_registro(
-    registro.nombre_fichero,
-    frecuencia_muestreo,
-    registro.datos["Angle_X"],
-    registro.datos["Linear_Acceleration_Z"],
-    registro.datos["Sync"],
+        registro.nombre_fichero,
+        frecuencia_muestreo,
+        registro.datos["Angle_X"],
+        registro.datos["Linear_Acceleration_Z"],
+        registro.datos["Sync"],
     )
 
 
