@@ -224,28 +224,26 @@ def calcular_longitud_temporal(total_muestras: int, frecuencia_muestreo: float) 
 
 
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 def buscar_indice_primera_sync(sync) -> int:
-    # Devuelve el indice de la primera muestra donde Sync es distinto de 0.
-    #
-    # Tarea del estudiante:
-    # 1. recorrer la senal Sync,
-    # 2. detectar la primera muestra distinta de cero,
-    # 3. devolver ese indice.
-    #
-    # Mientras no se implemente, devuelve -1.
+    sync = np.asarray(sync)
+
+    for i in range(len(sync)):
+        if sync[i] != 0:
+            return i
+
     return -1
 
 
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 def buscar_indice_ultima_sync(sync) -> int:
-    # Devuelve el indice de la ultima muestra donde Sync es distinto de 0.
-    #
-    # Tarea del estudiante:
-    # 1. recorrer la senal desde el final,
-    # 2. detectar la ultima muestra distinta de cero,
-    # 3. devolver ese indice.
-    #
-    # Mientras no se implemente, devuelve -1.
+    sync = np.asarray(sync)
+
+    for i in range(len(sync) - 1, -1, -1):
+        if sync[i] != 0:
+            return i
+
     return -1
 
 
