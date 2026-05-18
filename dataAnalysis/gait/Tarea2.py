@@ -272,15 +272,11 @@ def calcular_velocidad_marcha(
     frecuencia_muestreo: float,
     distancia_m: float = DISTANCIA_UTIL_10MWT_M,
 ) -> float:
-    # Calcula la velocidad media de marcha en la ventana util del 10MWT.
-    #
-    # Tarea del estudiante:
-    # 1. convertir la cantidad de muestras Sync en tiempo,
-    # 2. usar la distancia util de 6 metros,
-    # 3. devolver distancia / tiempo.
-    #
-    # Mientras no se implemente, devuelve 0.0.
-    return 0.0
+    if muestras_sync <= 0 or frecuencia_muestreo <= 0:
+        return 0.0
+
+    tsync = muestras_sync / frecuencia_muestreo
+    return distancia_m / tsync
 
 
 # ---------------------------------------------------------------------------
@@ -289,15 +285,11 @@ def calcular_velocidad_pasos(
     muestras_pasos: int,
     frecuencia_muestreo: float,
 ) -> float:
-    # Calcula la cantidad de pasos por segundo dentro de la ventana Sync.
-    #
-    # Tarea del estudiante:
-    # 1. convertir muestras_pasos en tiempo,
-    # 2. dividir la cantidad de pasos por ese tiempo,
-    # 3. devolver el resultado en pasos/s.
-    #
-    # Mientras no se implemente, devuelve 0.0.
-    return 0.0
+    if muestras_pasos <= 0 or frecuencia_muestreo <= 0 or pasos <= 0:
+        return 0.0
+
+    tsync = muestras_pasos / frecuencia_muestreo
+    return pasos / tsync
 
 
 # ---------------------------------------------------------------------------
@@ -305,15 +297,10 @@ def calcular_longitud_zancada(
     velocidad_marcha: float,
     velocidad_pasos: float,
 ) -> float:
-    # Estima la distancia media recorrida por cada paso detectado.
-    #
-    # Tarea del estudiante:
-    # 1. tomar la velocidad de marcha en m/s,
-    # 2. dividirla por la velocidad de pasos en pasos/s,
-    # 3. devolver el resultado en metros por paso.
-    #
-    # Mientras no se implemente, devuelve 0.0.
-    return 0.0
+    if velocidad_pasos <= 0:
+        return 0.0
+
+    return velocidad_marcha / velocidad_pasos
 
 
 # ---------------------------------------------------------------------------
@@ -404,12 +391,17 @@ def main() -> None:
 
     # Paso 2: elegimos un solo archivo para esta tarea.
     #
-    # Tarea del estudiante:
-    # 1. decidir que indice de la lista quiere analizar,
-    # 2. usar seleccionar_archivo_csv(...) para obtener la ruta completa.
-    indice = 0
+    imprimir_resumen(db_path, len(ficheros)) 
+    while True:
+        try:
+            indice = int(input(f"Seleccione un archivo (0 - {len(ficheros) - 1}): "))
+            if 0 <= indice <= len(ficheros) - 1:
+                break
+            else:
+                print(f"Error: ingrese un numero entre 0 y {len(ficheros) - 1}.")
+        except ValueError:
+            print("Error: debe ingresar un numero entero.")
     ruta_csv = seleccionar_archivo_csv(db_path, ficheros, indice)
-
     # Paso 3: cargamos el archivo seleccionado en un registro.
     registro = construir_registro_desde_csv(ruta_csv)
     frecuencia_muestreo = obtener_frecuencia_muestreo(registro)
