@@ -251,15 +251,17 @@ def buscar_indice_ultima_sync(sync) -> int:
 
 # ---------------------------------------------------------------------------
 def contar_transiciones_s3_s0(segmentation_output, inicio: int, fin: int) -> int:
-    # Cuenta cuantas veces la senal pasa de 3 a 0 dentro de la ventana Sync.
-    #
-    # Tarea del estudiante:
-    # 1. recorrer Segmentation_output entre inicio y fin,
-    # 2. comparar cada muestra con la siguiente,
-    # 3. contar las transiciones donde aparece 3 seguido de 0.
-    #
-    # Mientras no se implemente, devuelve 0.
-    return 0
+    if inicio < 0 or fin <= inicio:
+        return 0
+
+    ventana = segmentation_output.iloc[inicio:fin + 1].to_numpy()
+    contador = 0
+
+    for i in range(len(ventana) - 1):
+        if ventana[i] == 3 and ventana[i + 1] == 0:
+            contador += 1
+
+    return contador
 
 
 # ---------------------------------------------------------------------------
